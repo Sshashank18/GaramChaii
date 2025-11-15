@@ -4,7 +4,12 @@ const app = express();
 const PORT = 3001;
 const axios = require('axios'); // NEW: Import axios
 
-app.use(cors());
+app.use(cors(
+    {
+        "origin": "*",
+        "methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+    }
+));
 app.use(express.json());
 
 // --- PASTE YOUR URL FROM TEAMS HERE ---
