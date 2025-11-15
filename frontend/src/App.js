@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 
 // Your Node.js server address
-const API_URL = 'http://localhost:3001';
+const API_URL = 'https://garamchaii.fly.dev/';
 
 function App() {
   const [payers, setPayers] = useState([]);
