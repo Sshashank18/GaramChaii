@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 
 // Your Node.js server address
-const API_URL = 'https://garamchaibackend.vercel.app';
+const API_URL = 'https://garam-chaii.fly.dev';
 
 function App() {
   const [payers, setPayers] = useState([]);

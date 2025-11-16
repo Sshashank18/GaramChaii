@@ -1,7 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3000;
+const HOST = '0.0.0.0'; // Listen on all available network interfaces
 const axios = require('axios'); // NEW: Import axios
 
 app.use(cors(
