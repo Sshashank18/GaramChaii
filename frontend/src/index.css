@@ -68,3 +68,41 @@
 .edit-buttons button[type="submit"]:hover {
   background-color: #218838;
 }
+
+/* For the top payment card */
+.card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  margin-bottom: 2rem;
+}
+.card h2 {
+  margin-top: 0;
+}
+.amount-input {
+  width: 100%;
+  padding: 12px;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  box-sizing: border-box;
+}
+
+/* For highlighting the top 2 payers */
+.is-next-to-pay .payer-info {
+  font-weight: bold;
+}
+.is-next-to-pay {
+  background-color: #fffbeb;
+  border-left: 4px solid #facc15;
+}
+
+/* Your existing edit-form styles */
+.editing-row {
+  background-color: #fcfcfc;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  border-radius: 8px;
+}
+/* ... etc ... */

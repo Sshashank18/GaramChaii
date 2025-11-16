@@ -16,6 +16,7 @@ const TEAMS_WEBHOOK_URL = 'https://iitgoffice.webhook.office.com/webhookb2/e2e4a
 const DB_FILE = path.join(__dirname, 'chai_db.json');
 
 // This is the default state if no DB file is found
+// I am using your new list of 12 names.
 const INITIAL_STATE = {
     payers: [
         "Pradeep",
@@ -85,7 +86,7 @@ const getSortedPayers = () => {
 
 
 // --- NEW: Updated Teams Notification ---
-// --- NOTE: This function is NO LONGER CALLED in the new logic ---
+// This function will now be called by POST /api/pay
 const sendTeamsNotification = async (payer1Name, payer2Name, amount, nextPayer1Name, nextPayer2Name) => {
     if (!TEAMS_WEBHOOK_URL.startsWith('http')) {
         console.warn('TEAMS_WEBHOOK_URL is not set. Skipping notification.');
@@ -125,9 +126,55 @@ app.get('/api/turn', (req, res) => {
 });
 
 /**
+ * @route   POST /api/pay
+ * @desc    Confirms payment for the top 2 payers (INCREMENTS stats)
+ * THIS ENDPOINT SENDS A NOTIFICATION.
+ * @body    { "amount": 100 }
+ */
+app.post('/api/pay', async (req, res) => {
+    const { amount } = req.body;
+
+    if (typeof amount !== 'number' || amount <= 0) {
+        return res.status(400).json({ error: 'Request body must include a valid "amount".' });
+    }
+    if (state.payers.length < 2) {
+        return res.status(400).json({ error: 'Not enough payers in the list.' });
+    }
+
+    const sortedPayers = getSortedPayers();
+    const payer1 = sortedPayers[0];
+    const payer2 = sortedPayers[1];
+    
+    const amountPerPayer = amount / 2;
+
+    // 3. Update their stats (INCREMENT)
+    payer1.count++;
+    payer1.amount += amountPerPayer;
+    payer1.ratio = payer1.amount / payer1.count;
+
+    payer2.count++;
+    payer2.amount += amountPerPayer;
+    payer2.ratio = payer2.amount / payer2.count;
+
+    await writeDb();
+
+    // 5. Get the *next* two payers for the notification
+    const nextPayer1Name = sortedPayers[2] ? sortedPayers[2].name : "N/A";
+    const nextPayer2Name = sortedPayers[3] ? sortedPayers[3].name : "N/A";
+
+    // 6. Send notification (fire-and-forget)
+    sendTeamsNotification(payer1.name, payer2.name, amount, nextPayer1Name, nextPayer2Name);
+
+    // 7. Respond with the new, re-sorted list
+    res.json(getSortedPayers());
+});
+
+
+/**
  * @route   POST /api/update
- * @desc    Manually update the stats for a single payer
- * @body    { "name": "Sarthak and Devansh", "amount": 150, "count": 1 }
+ * @desc    Manually update the stats for a single payer (OVERWRITES stats)
+ * THIS ENDPOINT DOES *NOT* SEND A NOTIFICATION.
+ * @body    { "name": "Sarthak", "amount": 150, "count": 1 }
  */
 app.post('/api/update', async (req, res) => {
     const { name, amount, count } = req.body;
@@ -139,13 +186,11 @@ app.post('/api/update', async (req, res) => {
     if (typeof amount !== 'number' || amount < 0) {
         return res.status(400).json({ error: 'Request body must include a valid, non-negative "amount".' });
     }
-    // Ensure count is a whole number
     if (typeof count !== 'number' || count < 0 || !Number.isInteger(count)) {
         return res.status(400).json({ error: 'Request body must include a valid, non-negative integer "count".' });
     }
     // --- End Validation ---
 
-    // 1. Find the payer in our state
     const payer = state.payers.find(p => p.name === name);
 
     if (!payer) {
@@ -157,7 +202,6 @@ app.post('/api/update', async (req, res) => {
     payer.count = count;
     
     // 3. Recalculate the ratio
-    // Avoid division by zero
     payer.ratio = (count > 0) ? (amount / count) : 0;
 
     console.log(`Manually Updated ${payer.name}: Amount=${amount}, Count=${count}, Ratio=${payer.ratio}`);
