@@ -4,15 +4,17 @@ import './App.css';
 // Your Node.js server address
 const API_URL = 'https://garam-chaii.fly.dev'; // Make sure this is your correct Fly.io URL
 
+// --- Component 1: The Main App ---
+
 function App() {
-  const [payers, setPayers] =useState([]);
+  const [payers, setPayers] = useState([]);
   const [loading, setLoading] = useState(true); // Single loading state
 
-  // --- NEW: State for the top "Confirm Payment" card ---
+  // State for the top "Confirm Payment" card
   const [paymentAmount, setPaymentAmount] = useState('');
 
-  // --- State for inline editing ---
-  const [editingName, setEditingName] = useState(null);
+  // State for inline editing
+  const [editingName, setEditingName] = useState(null); // Tracks which payer is being edited
   const [editForm, setEditForm] = useState({ amount: '', count: '' });
 
   // 1. Fetch the initial payer list
@@ -112,7 +114,7 @@ function App() {
         <h1>☕ Chaii Payment Ledger</h1>
       </header>
 
-      {/* --- NEW: "Confirm Payment" Card (from old version) --- */}
+      {/* --- "Confirm Payment" Card --- */}
       <div className="card">
         <h2>Confirm Payment for Top 2</h2>
         <p>This will automatically update the stats for the next 2 people in the queue.</p>
@@ -134,7 +136,7 @@ function App() {
         </button>
       </div>
 
-      {/* --- Full Queue Display with Editing (from last version) --- */}
+      {/* --- Full Queue Display (NOW MUCH CLEANER!) --- */}
       <div className="upcoming-list">
         <h3>Payer Stats (Sorted by ratio)</h3>
         <ol>
@@ -142,57 +144,18 @@ function App() {
             const isEditing = editingName === payer.name;
             
             return (
-              <li
+              <PayerListItem
                 key={payer.name}
-                // Highlight top 2 *and* the row being edited
-                className={`${isEditing ? 'editing-row' : ''} ${index === 0 || index === 1 ? 'is-next-to-pay' : ''}`}
-              >
-                {isEditing ? (
-                  // --- RENDER EDIT FORM ---
-                  <form className="edit-form" onSubmit={(e) => { e.preventDefault(); handleSaveClick(payer.name); }}>
-                    <strong>{payer.name}</strong>
-                    <div className="edit-inputs">
-                      <label>
-                        Total Amount:
-                        <input
-                          type="number" name="amount" value={editForm.amount}
-                          onChange={handleFormChange} disabled={loading}
-                        />
-                      </label>
-                      <label>
-                        Total Count:
-                        <input
-                          type="number" name="count" value={editForm.count}
-                          onChange={handleFormChange} disabled={loading}
-                        />
-                      </label>
-                    </div>
-                    <div className="edit-buttons">
-                      <button type="submit" disabled={loading}>
-                        {loading ? 'Saving...' : 'Save'}
-                      </button>
-                      <button type="button" onClick={handleCancelClick} disabled={loading}>
-                        Cancel
-                      </button>
-                    </div>
-                  </form>
-                ) : (
-                  // --- RENDER DISPLAY ROW ---
-                  <>
-                    <div className="payer-info">
-                      <span>
-                        <strong>{index + 1}. {payer.name}</strong>
-                      </span>
-                      <span className="stats">
-                        (Paid: {payer.count}x | Total: ₹{payer.amount.toFixed(0)} | Ratio: {payer.ratio.toFixed(2)})
-                      </span>
-                    </div>
-                    <button onClick={() => handleEditClick(payer)} disabled={loading}>
-                      Edit
-                    </button>
-                  </>
-                )}
-              </li>
+                payer={payer}
+                index={index}
+                isEditing={isEditing}
+                loading={loading}
+                editForm={editForm}
+                onEditClick={handleEditClick}
+                onCancelClick={handleCancelClick}
+                onFormChange={handleFormChange}
+                onSaveClick={handleSaveClick}
+              />
             );
           })}
         </ol>
@@ -200,6 +163,102 @@ function App() {
         {!loading && payers.length === 0 && <p>No payers found. Check server.</p>}
       </div>
     </div>
+  );
+}
+
+// --- Component 2: The List Item ---
+// This component decides whether to show the display info or the edit form.
+
+function PayerListItem({
+  payer,
+  index,
+  isEditing,
+  loading,
+  editForm,
+  onEditClick,
+  onCancelClick,
+  onFormChange,
+  onSaveClick
+}) {
+  return (
+    <li
+      className={`${isEditing ? 'editing-row' : ''} ${
+        index === 0 || index === 1 ? 'is-next-to-pay' : ''
+      }`}
+    >
+      {isEditing ? (
+        <PayerEditForm
+          payer={payer}
+          editForm={editForm}
+          loading={loading}
+          onFormChange={onFormChange}
+          onSaveClick={onSaveClick}
+          onCancelClick={onCancelClick}
+        />
+      ) : (
+        <>
+          <div className="payer-info">
+            <span>
+              <strong>{index + 1}. {payer.name}</strong>
+            </span>
+            <span className="stats">
+              (Paid: {payer.count}x | Total: ₹{payer.amount.toFixed(0)} | Ratio: {payer.ratio.toFixed(2)})
+            </span>
+          </div>
+          <button onClick={() => onEditClick(payer)} disabled={loading}>
+            Edit
+          </button>
+        </>
+      )}
+    </li>
+  );
+}
+
+// --- Component 3: The Edit Form ---
+// This component is just the form itself.
+
+function PayerEditForm({
+  payer,
+  editForm,
+  loading,
+  onFormChange,
+  onSaveClick,
+  onCancelClick
+}) {
+  return (
+    <form className="edit-form" onSubmit={(e) => { e.preventDefault(); onSaveClick(payer.name); }}>
+      <strong>{payer.name}</strong>
+      <div className="edit-inputs">
+        <label>
+          Total Amount:
+          <input
+            type="number"
+            name="amount"
+            value={editForm.amount}
+            onChange={onFormChange}
+            disabled={loading}
+          />
+        </label>
+        <label>
+          Total Count:
+          <input
+            type="number"
+            name="count"
+            value={editForm.count}
+            onChange={onFormChange}
+            disabled={loading}
+          />
+        </label>
+      </div>
+      <div className="edit-buttons">
+        <button type="submit" disabled={loading}>
+          {loading ? 'Saving...' : 'Save'}
+        </button>
+        <button type="button" onClick={onCancelClick} disabled={loading}>
+          Cancel
+        </button>
+      </div>
+    </form>
   );
 }
 

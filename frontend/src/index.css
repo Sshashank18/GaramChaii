@@ -1,42 +1,122 @@
-/* --- Add these styles to your App.css --- */
-
-/* Style for the list item when in edit mode */
-.editing-row {
-  background-color: #fcfcfc;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  border-radius: 8px;
+/* --- General Layout --- */
+.container {
+  max-width: 600px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
+    Arial, sans-serif;
+  color: #333;
 }
 
-/* Make the normal list item a flex container */
+header {
+  text-align: center;
+  margin-bottom: 2rem;
+  color: #222;
+}
+
+/* --- Top Payment Card --- */
+.card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  margin-bottom: 2rem;
+}
+
+.card h2 {
+  margin-top: 0;
+}
+
+.amount-input {
+  width: 100%;
+  padding: 12px;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  box-sizing: border-box; /* Ensures padding doesn't break layout */
+}
+
+/* --- Payer List --- */
+.upcoming-list {
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  overflow: hidden; /* Clips the list items to the rounded corners */
+}
+
+.upcoming-list h3 {
+  margin: 0;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.upcoming-list ol {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* --- List Item (Display Mode) --- */
 .upcoming-list li {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 8px;
+  padding: 1.25rem 1.5rem;
   border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.15s ease-in-out;
+}
+
+.upcoming-list li:last-child {
+  border-bottom: none;
 }
 
 .upcoming-list li .payer-info {
   display: flex;
   flex-direction: column;
+  gap: 0.25rem;
 }
 
-/* Style for the edit form inside the <li> */
+.upcoming-list li .stats {
+  font-size: 0.9rem;
+  color: #555;
+}
+
+/* --- List Item (Special States) --- */
+
+/* Highlight for the top 2 payers */
+.is-next-to-pay {
+  background-color: #fffbeb;
+  border-left: 4px solid #facc15;
+}
+
+.is-next-to-pay .payer-info {
+  font-weight: 600; /* Bolder than 'bold' */
+}
+
+/* Highlight for the item being edited */
+.editing-row {
+  background-color: #fcfcfc;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border-left: 4px solid #007bff; /* Blue to show it's active */
+}
+
+/* --- Inline Edit Form --- */
 .edit-form {
   width: 100%;
-  padding: 10px;
+  padding: 10px 0;
 }
 
 .edit-form strong {
   font-size: 1.1rem;
-  margin-bottom: 10px;
+  margin-bottom: 1rem;
   display: block;
 }
 
 .edit-inputs {
   display: flex;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: 1rem;
+  margin-bottom: 1rem;
 }
 
 .edit-inputs label {
@@ -57,52 +137,55 @@
 
 .edit-buttons {
   display: flex;
-  gap: 10px;
+  gap: 0.5rem;
 }
 
-/* Style the "Save" button differently */
-.edit-buttons button[type="submit"] {
-  background-color: #28a745; /* Green */
+/* --- Buttons --- */
+button {
+  padding: 0.75rem 1.25rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background-color: #007bff;
   color: white;
+  transition: background-color 0.2s;
 }
-.edit-buttons button[type="submit"]:hover {
+
+button:hover:not(:disabled) {
+  background-color: #0056b3;
+}
+
+button:disabled {
+  background-color: #c0c0c0;
+  cursor: not-allowed;
+}
+
+/* Specific button styles */
+.upcoming-list li button {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  background-color: #6c757d;
+}
+
+.upcoming-list li button:hover:not(:disabled) {
+  background-color: #5a6268;
+}
+
+.edit-buttons button[type='submit'] {
+  background-color: #28a745; /* Green */
+}
+
+.edit-buttons button[type='submit']:hover:not(:disabled) {
   background-color: #218838;
 }
 
-/* For the top payment card */
-.card {
-  background-color: #ffffff;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  margin-bottom: 2rem;
-}
-.card h2 {
-  margin-top: 0;
-}
-.amount-input {
-  width: 100%;
-  padding: 12px;
-  font-size: 1rem;
-  margin-bottom: 1rem;
-  border-radius: 8px;
-  border: 1px solid #ddd;
-  box-sizing: border-box;
+.edit-buttons button[type='button'] {
+  background-color: #6c757d; /* Gray */
 }
 
-/* For highlighting the top 2 payers */
-.is-next-to-pay .payer-info {
-  font-weight: bold;
+.edit-buttons button[type='button']:hover:not(:disabled) {
+  background-color: #5a6268;
 }
-.is-next-to-pay {
-  background-color: #fffbeb;
-  border-left: 4px solid #facc15;
-}
-
-/* Your existing edit-form styles */
-.editing-row {
-  background-color: #fcfcfc;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  border-radius: 8px;
-}
-/* ... etc ... */
