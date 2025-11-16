@@ -1,116 +1,82 @@
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
-const fs = require('fs/promises'); // NEW: For file system
-const path = require('path'); // NEW: For file paths
+const fs = require('fs/promises');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const HOST = '0.0.0.0';
 
-
-//DO "fly deploy" in terminal if making any changes
-
+//Do "fly deploy" if changes
 
 // --- PASTE YOUR URL FROM TEAMS HERE ---
-const TEAMS_WEBHOOK_URL = 'https://iitgoffice.webhook.office.com/webhookb2/e2e4aa8f-fa6d-4187-b317-500f95139baf@850aa78d-94e1-4bc6-9cf3-8c11b530701c/IncomingWebhook/5817b4c72b50460f96e04dec15ca5e79/a1e8034b-6795-438f-913d-d802b8f572e7/V2h89Ia0XQxvnE6dPZMYB6XXsJva25HQcOpu9EsuGxnf41';
+const TEAMS_WEBHOOK_URL = 'https://garam-chaii.fly.dev/webhookb2/e2e4aa8f-fa6d-4187-b317-500f95139baf@850aa78d-94e1-4bc6-9cf3-8c11b530701c/IncomingWebhook/5817b4c72b50460f96e04dec15ca5e79/a1e8034b-6795-438f-913d-d802b8f572e7/V2h89Ia0XQxvnE6dPZMYB6XXsJva25HQcOpu9EsuGxnf41';
 
-// --- NEW: State Management & Persistence ---
+// --- State Management & Persistence ---
 
 const DB_FILE = path.join(__dirname, 'chai_db.json');
 
-// This is the default state if no DB file is found
-// I am using your new list of 12 names.
 const INITIAL_STATE = {
     payers: [
-        "Pradeep",
-        "Rohan Dayal",
-        "Tapish",
-        "Shashank",
-        "Vasu",
-        "Naman",
-        "Abhilash",
-        "saruav",
-        "Sarthak",
-        "Devansh",
-        "Ashwin",
-        "Rohit",
-    ].map(name => ({
-        name: name,
-        count: 0,
-        amount: 0,
-        ratio: 0 // We will sort by this (amount / count)
-    }))
+        "Pradeep", "Rohan Dayal", "Tapish", "Shashank", "Vasu", "Naman",
+        "Abhilash", "saruav", "Sarthak", "Devansh", "Ashwin", "Rohit",
+    ].map(name => ({ name, count: 0, amount: 0, ratio: 0 }))
 };
 
-// This variable will hold our application's state in memory
 let state = { payers: [] };
 
-/**
- * Writes the current in-memory state to the JSON file
- */
 const writeDb = async () => {
     try {
         await fs.writeFile(DB_FILE, JSON.stringify(state, null, 2), 'utf-8');
-    } catch (error) {
-        console.error("Error writing to DB file:", error.message);
-    }
+    } catch (error) { console.error("Error writing to DB file:", error.message); }
 };
 
-/**
- * Reads the state from the JSON file into memory when the server starts.
- * If the file doesn't exist, it creates one with the initial state.
- */
 const readDb = async () => {
     try {
         const data = await fs.readFile(DB_FILE, 'utf-8');
         state = JSON.parse(data);
-        if (!state.payers) { // Basic validation
-            throw new Error('Invalid DB file structure.');
-        }
+        if (!state.payers) { throw new Error('Invalid DB file structure.'); }
         console.log("Loaded state from chai_db.json");
     } catch (error) {
         console.warn("WARN: Could not read DB file. Using initial state.", error.message);
         state = INITIAL_STATE;
-        await writeDb(); // Create the file
+        await writeDb();
     }
 };
 
-/**
- * Returns a new array of payers, sorted by their ratio (ASC)
- * This simulates the "min-heap"
- */
 const getSortedPayers = () => {
-    // Sorts the list by ratio.
-    // If ratio is the same, it will keep its relative order.
     return state.payers.sort((a, b) => a.ratio - b.ratio);
 };
 
-// --- End of State Management ---
+// --- Teams Notifications ---
 
+// Notification for *paying*
+const sendPaymentNotification = async (payer1Name, payer2Name, amount, nextPayer1Name, nextPayer2Name) => {
+    if (!TEAMS_WEBHOOK_URL.startsWith('http')) return;
+    const message = {
+        "text": `☕ Thanks to **${payer1Name}** and **${payer2Name}** for the chaii! (Total: ₹${(amount || 0).toFixed(2)}) 🎉\n\n**Next up:** ${nextPayer1Name} and ${nextPayer2Name}`
+    };
+    try {
+        await axios.post(TEAMS_WEBHOOK_URL, message, { headers: { 'Content-Type': 'application/json' } });
+        console.log(`Sent PAYMENT notification to Teams.`);
+    } catch (error) { console.error('Error sending notification:', error.message); }
+};
 
-// --- NEW: Updated Teams Notification ---
-// This function will now be called by POST /api/pay
-const sendTeamsNotification = async (payer1Name, payer2Name, amount, nextPayer1Name, nextPayer2Name) => {
+// --- NEW: Notification function for "Next Turn" ---
+const sendNextTurnNotification = async (nextPayer1Name, nextPayer2Name) => {
     if (!TEAMS_WEBHOOK_URL.startsWith('http')) {
         console.warn('TEAMS_WEBHOOK_URL is not set. Skipping notification.');
         return;
     }
-
-    const totalAmount = (amount || 0).toFixed(2);
-    
-    // Updated message for two payers
     const message = {
-        "text": `☕ Thanks to **${payer1Name}** and **${payer2Name}** for the chaii! (Total: ₹${totalAmount}) 🎉\n\n**Next up:** ${nextPayer1Name} and ${nextPayer2Name}`
+        "text": `🔔 **Reminder:** The next two to pay for chaii are **${nextPayer1Name}** and **${nextPayer2Name}**!`
     };
-
     try {
-        await axios.post(TEAMS_WEBHOOK_URL, message, {
-            headers: { 'Content-Type': 'application/json' }
-        });
-        console.log(`Sent notification to Teams: ${payer1Name} & ${payer2Name} paid.`);
+        await axios.post(TEAMS_WEBHOOK_URL, message, { headers: { 'Content-Type': 'application/json' } });
+        console.log(`Sent NEXT TURN reminder notification to Teams.`);
     } catch (error) {
-        console.error('Error sending notification to Teams:', error.message);
+        console.error('Error sending notification:', error.message);
     }
 };
 
@@ -119,25 +85,14 @@ const sendTeamsNotification = async (payer1Name, payer2Name, amount, nextPayer1N
 app.use(cors({ "origin": "*", "methods": "GET,HEAD,PUT,PATCH,POST,DELETE" }));
 app.use(express.json());
 
-/**
- * @route   GET /api/turn
- * @desc    Get the current list of payers, sorted by who should pay next
- */
+// GET the sorted list
 app.get('/api/turn', (req, res) => {
-    // We always return the list sorted by the ratio
-    const sortedPayers = getSortedPayers();
-    res.json(sortedPayers);
+    res.json(getSortedPayers());
 });
 
-/**
- * @route   POST /api/pay
- * @desc    Confirms payment for the top 2 payers (INCREMENTS stats)
- * THIS ENDPOINT SENDS A NOTIFICATION.
- * @body    { "amount": 100 }
- */
+// POST to *pay* (updates data, sends payment notification)
 app.post('/api/pay', async (req, res) => {
     const { amount } = req.body;
-
     if (typeof amount !== 'number' || amount <= 0) {
         return res.status(400).json({ error: 'Request body must include a valid "amount".' });
     }
@@ -148,89 +103,64 @@ app.post('/api/pay', async (req, res) => {
     const sortedPayers = getSortedPayers();
     const payer1 = sortedPayers[0];
     const payer2 = sortedPayers[1];
-    
     const amountPerPayer = amount / 2;
 
-    // 3. Update their stats (INCREMENT)
     payer1.count++;
     payer1.amount += amountPerPayer;
     payer1.ratio = payer1.amount / payer1.count;
-
     payer2.count++;
     payer2.amount += amountPerPayer;
     payer2.ratio = payer2.amount / payer2.count;
 
     await writeDb();
 
-    // 5. Get the *next* two payers for the notification
     const nextPayer1Name = sortedPayers[2] ? sortedPayers[2].name : "N/A";
     const nextPayer2Name = sortedPayers[3] ? sortedPayers[3].name : "N/A";
 
-    // 6. Send notification (fire-and-forget)
-    sendTeamsNotification(payer1.name, payer2.name, amount, nextPayer1Name, nextPayer2Name);
-
-    // 7. Respond with the new, re-sorted list
+    sendPaymentNotification(payer1.name, payer2.name, amount, nextPayer1Name, nextPayer2Name);
     res.json(getSortedPayers());
 });
 
+// --- NEW: Endpoint to send a notification WITHOUT paying ---
+app.post('/api/notify', async (req, res) => {
+    const sortedPayers = getSortedPayers();
+    if (state.payers.length < 2) {
+        return res.status(400).json({ error: 'Not enough payers to notify.' });
+    }
+    
+    const nextPayer1Name = sortedPayers[0] ? sortedPayers[0].name : "N/A";
+    const nextPayer2Name = sortedPayers[1] ? sortedPayers[1].name : "N/A";
 
-/**
- * @route   POST /api/update
- * @desc    Manually update the stats for a single payer (OVERWRITES stats)
- * THIS ENDPOINT DOES *NOT* SEND A NOTIFICATION.
- * @body    { "name": "Sarthak", "amount": 150, "count": 1 }
- */
+    // Call the new notification function
+    await sendNextTurnNotification(nextPayer1Name, nextPayer2Name);
+
+    res.status(200).json({ message: 'Notification sent successfully.' });
+});
+
+// POST to *manually update* (updates data, no notification)
 app.post('/api/update', async (req, res) => {
     const { name, amount, count } = req.body;
-
-    // --- Validation ---
-    if (!name || typeof name !== 'string') {
-        return res.status(400).json({ error: 'Request body must include a valid "name".' });
+    if (!name || typeof amount !== 'number' || typeof count !== 'number' || amount < 0 || count < 0 || !Number.isInteger(count)) {
+        return res.status(400).json({ error: 'Invalid payload.' });
     }
-    if (typeof amount !== 'number' || amount < 0) {
-        return res.status(400).json({ error: 'Request body must include a valid, non-negative "amount".' });
-    }
-    if (typeof count !== 'number' || count < 0 || !Number.isInteger(count)) {
-        return res.status(400).json({ error: 'Request body must include a valid, non-negative integer "count".' });
-    }
-    // --- End Validation ---
-
     const payer = state.payers.find(p => p.name === name);
-
     if (!payer) {
-        return res.status(404).json({ error: `Payer with name "${name}" not found.` });
+        return res.status(404).json({ error: `Payer not found.` });
     }
-
-    // 2. Update their stats (overwrite)
     payer.amount = amount;
     payer.count = count;
-    
-    // 3. Recalculate the ratio
     payer.ratio = (count > 0) ? (amount / count) : 0;
 
-    console.log(`Manually Updated ${payer.name}: Amount=${amount}, Count=${count}, Ratio=${payer.ratio}`);
-
-    // 4. Save the new state to our JSON file
     await writeDb();
-    
-    // 5. Respond with the new, re-sorted list
     res.json(getSortedPayers());
 });
 
-
-/**
- * Main function to start the server
- */
+// Start the server
 const startServer = async () => {
-    // We MUST read the DB before we start listening for requests
     await readDb();
-    
     app.listen(PORT, HOST, () => {
         console.log(`Chaii server running on http://${HOST}:${PORT}`);
-        console.log("Current Payer State (Sorted by Ratio):");
         console.table(getSortedPayers());
     });
 };
-
-// Start the server
 startServer();

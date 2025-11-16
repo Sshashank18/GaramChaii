@@ -231,3 +231,13 @@ button:disabled {
 .edit-buttons button[type='submit']:hover:not(:disabled) {
   background-color: var(--success-hover);
 }
+
+.notify-button {
+  background-color: var(--secondary-color);
+  margin-top: 0.75rem; /* Add some space above it */
+  width: 100%; /* Make it full-width like the one above */
+}
+
+.notify-button:hover:not(:disabled) {
+  background-color: var(--secondary-hover);
+}

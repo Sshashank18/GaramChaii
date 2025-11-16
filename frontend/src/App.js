@@ -12,6 +12,9 @@ function App() {
 
   // State for the top "Confirm Payment" card
   const [paymentAmount, setPaymentAmount] = useState('');
+  
+  // --- NEW: State for the notify button ---
+  const [isNotifying, setIsNotifying] = useState(false);
 
   // State for inline editing
   const [editingName, setEditingName] = useState(null); // Tracks which payer is being edited
@@ -39,7 +42,7 @@ function App() {
       return;
     }
 
-    setLoading(true);
+    setLoading(true); // Use the main loading state
     try {
       const response = await fetch(`${API_URL}/api/pay`, {
         method: 'POST',
@@ -57,6 +60,26 @@ function App() {
       alert("Error: Could not confirm payment.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // --- NEW: Logic for the "Notify Next Turn" button ---
+  const handleNotify = async () => {
+    setIsNotifying(true); // Use the new, separate loading state
+    try {
+      const response = await fetch(`${API_URL}/api/notify`, {
+        method: 'POST',
+      });
+      if (!response.ok) throw new Error('Failed to send notification.');
+      
+      // Optional: Add a small success message/toast here
+      // alert('Notification sent to Teams!');
+
+    } catch (err) {
+      console.error("Failed to send notification:", err);
+      alert("Error: Could not send notification.");
+    } finally {
+      setIsNotifying(false);
     }
   };
 
@@ -86,7 +109,7 @@ function App() {
       return;
     }
 
-    setLoading(true);
+    setLoading(true); // Use the main loading state
     try {
       const response = await fetch(`${API_URL}/api/update`, {
         method: 'POST',
@@ -125,14 +148,23 @@ function App() {
           placeholder="Enter total amount (e.g., 150)"
           value={paymentAmount}
           onChange={(e) => setPaymentAmount(e.target.value)}
-          disabled={loading}
+          disabled={loading || isNotifying} // Disable if either action is running
         />
         
         <button
           onClick={handlePayment}
-          disabled={loading || payers.length < 2 || !paymentAmount || Number(paymentAmount) <= 0}
+          disabled={loading || isNotifying || payers.length < 2 || !paymentAmount || Number(paymentAmount) <= 0}
         >
           {loading ? "Updating..." : "Confirm Payment & Update Queue"}
+        </button>
+
+        {/* --- NEW NOTIFY BUTTON --- */}
+        <button
+          onClick={handleNotify}
+          className="notify-button" // New class for styling
+          disabled={loading || isNotifying || payers.length < 2}
+        >
+          {isNotifying ? "Notifying..." : "Notify Next Turn 🔔"}
         </button>
       </div>
 
@@ -149,7 +181,7 @@ function App() {
                 payer={payer}
                 index={index}
                 isEditing={isEditing}
-                loading={loading}
+                loading={loading || isNotifying} // Pass down main loading state
                 editForm={editForm}
                 onEditClick={handleEditClick}
                 onCancelClick={handleCancelClick}
