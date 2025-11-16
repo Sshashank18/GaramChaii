@@ -1,74 +1,184 @@
-/* --- General Layout --- */
+/* --- 1. Root Variables & Global Styles --- */
+:root {
+  /* Colors */
+  --primary-color: #007bff;
+  --primary-hover: #0056b3;
+  --success-color: #28a745;
+  --success-hover: #218838;
+  --secondary-color: #6c757d;
+  --secondary-hover: #5a6268;
+  --warning-bg: #fffbeb;
+  --warning-border: #facc15;
+  --edit-border: #007bff;
+
+  /* Typography */
+  --text-dark: #212529;
+  --text-medium: #495057;
+  --text-light: #555;
+  --text-white: #ffffff;
+
+  /* Backgrounds */
+  --bg-color: #f8f9fa;
+  --card-bg: #ffffff;
+  --border-color: #f0f0f0;
+
+  /* Sizing & Effects */
+  --border-radius-lg: 12px;
+  --border-radius-md: 8px;
+  --border-radius-sm: 4px;
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.05);
+  --transition-speed: 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
+    Arial, sans-serif;
+  color: var(--text-medium);
+  background-color: var(--bg-color);
+}
+
+/* --- 2. Layout & Containers --- */
 .container {
   max-width: 600px;
   margin: 2rem auto;
   padding: 0 1rem;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
-    Arial, sans-serif;
-  color: #333;
+  animation: fadeIn 0.5s ease-out;
 }
 
 header {
   text-align: center;
   margin-bottom: 2rem;
-  color: #222;
+  color: var(--text-dark);
 }
 
-/* --- Top Payment Card --- */
-.card {
-  background-color: #ffffff;
-  border-radius: 12px;
+/* --- 3. Cards (Payment & List) --- */
+.card,
+.upcoming-list {
+  background-color: var(--card-bg);
+  border-radius: var(--border-radius-lg);
   padding: 1.5rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-lg);
   margin-bottom: 2rem;
+  transition: all var(--transition-speed);
 }
 
-.card h2 {
+.upcoming-list {
+  padding: 0;
+  overflow: hidden; /* To keep rounded corners on list items */
+}
+
+.card h2,
+.upcoming-list h3 {
   margin-top: 0;
+  color: var(--text-dark);
 }
 
+.upcoming-list h3 {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.card:hover,
+.upcoming-list:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.07);
+}
+
+/* --- 4. Form Inputs & Buttons --- */
 .amount-input {
   width: 100%;
   padding: 12px;
   font-size: 1rem;
   margin-bottom: 1rem;
-  border-radius: 8px;
+  border-radius: var(--border-radius-md);
   border: 1px solid #ddd;
-  box-sizing: border-box; /* Ensures padding doesn't break layout */
+  box-sizing: border-box;
+  transition: all var(--transition-speed);
 }
 
-/* --- Payer List --- */
-.upcoming-list {
-  background-color: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  overflow: hidden; /* Clips the list items to the rounded corners */
+.amount-input:focus,
+.edit-inputs input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+  outline: none;
 }
 
-.upcoming-list h3 {
-  margin: 0;
-  padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid #f0f0f0;
+button {
+  padding: 0.75rem 1.25rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  background-color: var(--primary-color);
+  color: var(--text-white);
+  transition: all var(--transition-speed);
 }
 
+button:hover:not(:disabled) {
+  background-color: var(--primary-hover);
+  transform: scale(1.03);
+  box-shadow: var(--shadow-md);
+}
+
+button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+button:disabled {
+  background-color: #c0c0c0;
+  cursor: not-allowed;
+}
+
+/* --- 5. Payer List & Items --- */
 .upcoming-list ol {
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
-/* --- List Item (Display Mode) --- */
 .upcoming-list li {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid #f0f0f0;
-  transition: background-color 0.15s ease-in-out;
+  border-bottom: 1px solid var(--border-color);
+  border-left: 4px solid transparent; /* Placeholder for highlight */
+  transition: all var(--transition-speed);
 }
 
 .upcoming-list li:last-child {
   border-bottom: none;
+}
+
+.upcoming-list li:hover {
+  background-color: var(--bg-color);
 }
 
 .upcoming-list li .payer-info {
@@ -79,38 +189,36 @@ header {
 
 .upcoming-list li .stats {
   font-size: 0.9rem;
-  color: #555;
+  color: var(--text-light);
 }
 
-/* --- List Item (Special States) --- */
-
-/* Highlight for the top 2 payers */
+/* List Item States */
 .is-next-to-pay {
-  background-color: #fffbeb;
-  border-left: 4px solid #facc15;
+  background-color: var(--warning-bg);
+  border-left-color: var(--warning-border);
 }
 
 .is-next-to-pay .payer-info {
-  font-weight: 600; /* Bolder than 'bold' */
+  font-weight: 600;
 }
 
-/* Highlight for the item being edited */
 .editing-row {
   background-color: #fcfcfc;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  border-left: 4px solid #007bff; /* Blue to show it's active */
+  border-left-color: var(--edit-border);
 }
 
-/* --- Inline Edit Form --- */
+/* --- 6. Inline Edit Form --- */
 .edit-form {
   width: 100%;
   padding: 10px 0;
+  animation: slideFadeIn 0.3s ease-out;
 }
 
 .edit-form strong {
   font-size: 1.1rem;
   margin-bottom: 1rem;
   display: block;
+  color: var(--text-dark);
 }
 
 .edit-inputs {
@@ -123,7 +231,7 @@ header {
   display: flex;
   flex-direction: column;
   font-size: 0.85rem;
-  color: #555;
+  color: var(--text-light);
   width: 50%;
 }
 
@@ -131,7 +239,7 @@ header {
   font-size: 1rem;
   padding: 8px;
   border: 1px solid #ccc;
-  border-radius: 4px;
+  border-radius: var(--border-radius-sm);
   margin-top: 4px;
 }
 
@@ -140,52 +248,22 @@ header {
   gap: 0.5rem;
 }
 
-/* --- Buttons --- */
-button {
-  padding: 0.75rem 1.25rem;
-  font-size: 1rem;
-  font-weight: 600;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  background-color: #007bff;
-  color: white;
-  transition: background-color 0.2s;
-}
-
-button:hover:not(:disabled) {
-  background-color: #0056b3;
-}
-
-button:disabled {
-  background-color: #c0c0c0;
-  cursor: not-allowed;
-}
-
-/* Specific button styles */
+/* Specific button styles for list */
 .upcoming-list li button {
   padding: 0.5rem 1rem;
   font-size: 0.9rem;
   font-weight: 500;
-  background-color: #6c757d;
+  background-color: var(--secondary-color);
 }
 
 .upcoming-list li button:hover:not(:disabled) {
-  background-color: #5a6268;
+  background-color: var(--secondary-hover);
 }
 
 .edit-buttons button[type='submit'] {
-  background-color: #28a745; /* Green */
+  background-color: var(--success-color);
 }
 
 .edit-buttons button[type='submit']:hover:not(:disabled) {
-  background-color: #218838;
-}
-
-.edit-buttons button[type='button'] {
-  background-color: #6c757d; /* Gray */
-}
-
-.edit-buttons button[type='button']:hover:not(:disabled) {
-  background-color: #5a6268;
+  background-color: var(--success-hover);
 }
