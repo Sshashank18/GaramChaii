@@ -6,12 +6,14 @@ const API_URL = 'https://garam-chaii.fly.dev'; // Make sure this is your correct
 
 function App() {
   const [payers, setPayers] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [amount, setAmount] = useState(''); // NEW: State for the payment amount
+  const [loading, setLoading] = useState(true); // True on initial load
+  
+  // NEW: State for inline editing
+  const [editingName, setEditingName] = useState(null); // Stores the name of the payer being edited
+  const [editForm, setEditForm] = useState({ amount: '', count: '' }); // Stores the values in the edit inputs
 
   // 1. Fetch the initial payer list when the app loads
   useEffect(() => {
-    setLoading(true);
     fetch(`${API_URL}/api/turn`)
       .then(res => res.json())
       .then(data => {
@@ -24,86 +26,149 @@ function App() {
       });
   }, []);
 
-  // 2. Handle the "Confirm Payment" button click
-  const handlePayment = () => {
-    const paymentAmount = Number(amount);
-    if (!paymentAmount || paymentAmount <= 0) {
-      alert('Please enter a valid, positive amount.');
+  // 2. NEW: Handle clicking the "Edit" button
+  const handleEditClick = (payer) => {
+    setEditingName(payer.name);
+    // Pre-fill the form with the payer's current data
+    setEditForm({ amount: payer.amount, count: payer.count });
+  };
+
+  // 3. NEW: Handle clicking the "Cancel" button
+  const handleCancelClick = () => {
+    setEditingName(null);
+    setEditForm({ amount: '', count: '' });
+  };
+
+  // 4. NEW: Update the form state as the user types
+  const handleFormChange = (e) => {
+    const { name, value } = e.target;
+    setEditForm(prevForm => ({
+      ...prevForm,
+      [name]: value
+    }));
+  };
+
+  // 5. NEW: Handle saving the changes for a payer
+  const handleSaveClick = async (name) => {
+    const newAmount = Number(editForm.amount);
+    const newCount = Number(editForm.count);
+
+    // Basic validation
+    if (newAmount < 0 || newCount < 0 || !Number.isInteger(newCount)) {
+      alert('Please enter a valid, non-negative amount and a whole number for count.');
       return;
     }
 
-    setLoading(true);
-    // NEW: Call the /api/pay endpoint with the amount in the body
-    fetch(`${API_URL}/api/pay`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ amount: paymentAmount })
-    })
-      .then(res => res.json())
-      .then(data => {
-        setPayers(data); // Update the list with the new sorted order
-        setAmount('');   // Clear the input field
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error("Failed to update turn:", err);
-        setLoading(false);
+    setLoading(true); // Use the main loading state to disable all buttons
+    
+    try {
+      const response = await fetch(`${API_URL}/api/update`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: name,
+          amount: newAmount,
+          count: newCount
+        })
       });
+
+      if (!response.ok) {
+        throw new Error('Failed to save update.');
+      }
+
+      const updatedPayers = await response.json();
+      setPayers(updatedPayers); // Set the new sorted list from the server
+      setEditingName(null); // Exit edit mode
+      
+    } catch (err) {
+      console.error("Failed to update payer:", err);
+      alert("Error: Could not save changes.");
+    } finally {
+      setLoading(false);
+    }
   };
+
 
   return (
     <div className="container">
       <header>
-        <h1>☕ Chaii Payment Turn</h1>
+        <h1>☕ Chaii Payment Ledger</h1>
       </header>
 
-      {/* --- NEW: Payment Card --- */}
-      <div className="card">
-        <h2>Confirm Payment</h2>
-        <p>This will confirm payment for the top 2 people in the queue below and update the list.</p>
-        
-        <input
-          type="number"
-          className="amount-input"
-          placeholder="Enter total amount (e.g., 150)"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          disabled={loading}
-        />
-        
-        <button
-          onClick={handlePayment}
-          // NEW: Disable logic checks for amount and payer count
-          disabled={loading || payers.length < 2 || !amount || Number(amount) <= 0}
-        >
-          {loading ? "Updating..." : "Confirm Payment & Update Queue"}
-        </button>
-      </div>
+      {/* --- THIS CARD IS REMOVED --- */}
 
-      {/* --- NEW: Full Queue Display --- */}
+      {/* --- NEW: Full Queue Display with Editing --- */}
       <div className="upcoming-list">
-        <h3>Payment Queue (Sorted by who pays next)</h3>
+        <h3>Payer Stats (Sorted by ratio)</h3>
         <ol>
-          {payers.map((payer, index) => (
-            <li
-              key={payer.name}
-              // NEW: Highlight the next two payers
-              className={index === 0 || index === 1 ? 'is-next-to-pay' : ''}
-            >
-              <span>
-                <strong>{index + 1}. {payer.name}</strong>
-              </span>
-              {/* NEW: Display stats for each person */}
-              <span className="stats">
-                (Paid: {payer.count}x | Total: ₹{payer.amount.toFixed(0)} | Ratio: {payer.ratio.toFixed(2)})
-              </span>
-            </li>
-          ))}
+          {payers.map((payer, index) => {
+            const isEditing = editingName === payer.name;
+            
+            return (
+              <li
+                key={payer.name}
+                // NEW: Highlight the row being edited
+                className={isEditing ? 'editing-row' : ''}
+              >
+                {isEditing ? (
+                  // --- RENDER EDIT FORM ---
+                  <form className="edit-form" onSubmit={(e) => { e.preventDefault(); handleSaveClick(payer.name); }}>
+                    <strong>{payer.name}</strong>
+                    <div className="edit-inputs">
+                      <label>
+                        Total Amount:
+                        <input
+                          type="number"
+                          name="amount"
+                          value={editForm.amount}
+                          onChange={handleFormChange}
+                          disabled={loading}
+                        />
+                      </label>
+                      <label>
+                        Total Count:
+                        <input
+                          type="number"
+                          name="count"
+                          value={editForm.count}
+                          onChange={handleFormChange}
+                          disabled={loading}
+                        />
+                      </label>
+                    </div>
+                    <div className="edit-buttons">
+                      <button type="submit" disabled={loading}>
+                        {loading ? 'Saving...' : 'Save'}
+                      </button>
+                      <button type="button" onClick={handleCancelClick} disabled={loading}>
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  // --- RENDER DISPLAY ROW ---
+                  <>
+                    <div className="payer-info">
+                      <span>
+                        <strong>{index + 1}. {payer.name}</strong>
+                      </span>
+                      <span className="stats">
+                        (Paid: {payer.count}x | Total: ₹{payer.amount.toFixed(0)} | Ratio: {payer.ratio.toFixed(2)})
+                      </span>
+                    </div>
+                    <button onClick={() => handleEditClick(payer)} disabled={loading}>
+                      Edit
+                    </button>
+                  </>
+                )}
+              </li>
+            );
+          })}
         </ol>
         {loading && payers.length === 0 && <p>Loading list...</p>}
-        {!loading && payers.length < 2 && <p>Add at least 2 payer groups to the list!</p>}
+        {!loading && payers.length === 0 && <p>No payers found. Check server.</p>}
       </div>
     </div>
   );

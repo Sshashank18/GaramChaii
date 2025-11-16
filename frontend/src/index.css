@@ -1,46 +1,70 @@
 /* --- Add these styles to your App.css --- */
 
-/* Style for the new amount input */
-.amount-input {
-  width: 100%;
-  padding: 12px;
-  font-size: 1rem;
-  margin-bottom: 1rem;
+/* Style for the list item when in edit mode */
+.editing-row {
+  background-color: #fcfcfc;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
   border-radius: 8px;
-  border: 1px solid #ddd;
-  box-sizing: border-box; /* Important for padding to work nicely */
 }
 
-/* Style for the <li> item that is next to pay */
-.is-next-to-pay {
-  background-color: #fffbeb;
-  font-weight: bold;
-  border-left: 4px solid #facc15; /* A yellow accent */
-  padding-left: 10px;
-}
-
-/* Styles for the stats (count, amount, ratio) */
-.upcoming-list li .stats {
-  font-size: 0.85rem;
-  color: #555;
-  margin-left: 0.5rem;
-  display: block; /* Makes it appear on a new line or wrap nicely */
-}
-
-/* Make the list items more readable */
+/* Make the normal list item a flex container */
 .upcoming-list li {
-  padding: 8px 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 8px;
   border-bottom: 1px solid #f0f0f0;
 }
 
-.upcoming-list li:last-child {
-  border-bottom: none;
+.upcoming-list li .payer-info {
+  display: flex;
+  flex-direction: column;
 }
 
-/* A simple grid for the old current payer card (if you use it) */
-.current-payers-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  margin-bottom: 1rem;
+/* Style for the edit form inside the <li> */
+.edit-form {
+  width: 100%;
+  padding: 10px;
+}
+
+.edit-form strong {
+  font-size: 1.1rem;
+  margin-bottom: 10px;
+  display: block;
+}
+
+.edit-inputs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.edit-inputs label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85rem;
+  color: #555;
+  width: 50%;
+}
+
+.edit-inputs input {
+  font-size: 1rem;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-top: 4px;
+}
+
+.edit-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+/* Style the "Save" button differently */
+.edit-buttons button[type="submit"] {
+  background-color: #28a745; /* Green */
+  color: white;
+}
+.edit-buttons button[type="submit"]:hover {
+  background-color: #218838;
 }

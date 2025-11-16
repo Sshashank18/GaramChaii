@@ -18,12 +18,18 @@ const DB_FILE = path.join(__dirname, 'chai_db.json');
 // This is the default state if no DB file is found
 const INITIAL_STATE = {
     payers: [
-        "Pradeep and Rohan Dayal",
-        "Tapish and Shashank",
-        "Vasu and Naman",
-        "Abhilash And saruav",
-        "Sarthak and Devansh",
-        "Ashwin and Rohit",
+        "Pradeep",
+        "Rohan Dayal",
+        "Tapish",
+        "Shashank",
+        "Vasu",
+        "Naman",
+        "Abhilash",
+        "saruav",
+        "Sarthak",
+        "Devansh",
+        "Ashwin",
+        "Rohit",
     ].map(name => ({
         name: name,
         count: 0,
@@ -79,6 +85,7 @@ const getSortedPayers = () => {
 
 
 // --- NEW: Updated Teams Notification ---
+// --- NOTE: This function is NO LONGER CALLED in the new logic ---
 const sendTeamsNotification = async (payer1Name, payer2Name, amount, nextPayer1Name, nextPayer2Name) => {
     if (!TEAMS_WEBHOOK_URL.startsWith('http')) {
         console.warn('TEAMS_WEBHOOK_URL is not set. Skipping notification.');
@@ -118,52 +125,50 @@ app.get('/api/turn', (req, res) => {
 });
 
 /**
- * @route   POST /api/pay
- * @desc    Confirms a payment has been made by the top 2 payers
- * @body    { "amount": 100 }
+ * @route   POST /api/update
+ * @desc    Manually update the stats for a single payer
+ * @body    { "name": "Sarthak and Devansh", "amount": 150, "count": 1 }
  */
-app.post('/api/pay', async (req, res) => {
-    const { amount } = req.body;
+app.post('/api/update', async (req, res) => {
+    const { name, amount, count } = req.body;
 
-    if (typeof amount !== 'number' || amount <= 0) {
-        return res.status(400).json({ error: 'Request body must include a valid "amount".' });
+    // --- Validation ---
+    if (!name || typeof name !== 'string') {
+        return res.status(400).json({ error: 'Request body must include a valid "name".' });
+    }
+    if (typeof amount !== 'number' || amount < 0) {
+        return res.status(400).json({ error: 'Request body must include a valid, non-negative "amount".' });
+    }
+    // Ensure count is a whole number
+    if (typeof count !== 'number' || count < 0 || !Number.isInteger(count)) {
+        return res.status(400).json({ error: 'Request body must include a valid, non-negative integer "count".' });
+    }
+    // --- End Validation ---
+
+    // 1. Find the payer in our state
+    const payer = state.payers.find(p => p.name === name);
+
+    if (!payer) {
+        return res.status(404).json({ error: `Payer with name "${name}" not found.` });
     }
 
-    if (state.payers.length < 2) {
-        return res.status(400).json({ error: 'Not enough payers in the list to complete payment.' });
-    }
-
-    // 1. Get the sorted list (this sorts the main 'state.payers' array)
-    const sortedPayers = getSortedPayers();
-
-    // 2. Take the top 2 payers (the "min" items)
-    const payer1 = sortedPayers[0];
-    const payer2 = sortedPayers[1];
+    // 2. Update their stats (overwrite)
+    payer.amount = amount;
+    payer.count = count;
     
-    const amountPerPayer = amount / 2;
+    // 3. Recalculate the ratio
+    // Avoid division by zero
+    payer.ratio = (count > 0) ? (amount / count) : 0;
 
-    // 3. Update their stats
-    payer1.count++;
-    payer1.amount += amountPerPayer;
-    payer1.ratio = payer1.amount / payer1.count; // Recalculate ratio
-
-    payer2.count++;
-    payer2.amount += amountPerPayer;
-    payer2.ratio = payer2.amount / payer2.count; // Recalculate ratio
+    console.log(`Manually Updated ${payer.name}: Amount=${amount}, Count=${count}, Ratio=${payer.ratio}`);
 
     // 4. Save the new state to our JSON file
     await writeDb();
-
-    // 5. Get the *next* two payers for the notification
-    const nextPayer1Name = sortedPayers[2] ? sortedPayers[2].name : "N/A";
-    const nextPayer2Name = sortedPayers[3] ? sortedPayers[3].name : "N/A";
-
-    // 6. Send notification (fire-and-forget)
-    sendTeamsNotification(payer1.name, payer2.name, amount, nextPayer1Name, nextPayer2Name);
-
-    // 7. Respond with the new, re-sorted list
+    
+    // 5. Respond with the new, re-sorted list
     res.json(getSortedPayers());
 });
+
 
 /**
  * Main function to start the server
