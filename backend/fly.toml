@@ -20,3 +20,7 @@ primary_region = 'bom'
   memory = '1gb'
   cpu_kind = 'shared'
   cpus = 1
+
+[mounts]
+source = "chai_data"
+destination = "/data"

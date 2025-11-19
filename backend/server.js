@@ -15,7 +15,11 @@ const TEAMS_WEBHOOK_URL = 'https://iitgoffice.webhook.office.com/webhookb2/e2e4a
 
 // --- State Management & Persistence ---
 
-const DB_FILE = path.join(__dirname, 'chai_db.json');
+// If running on Fly.io (production), use the mounted volume.
+// If running locally, use the local folder.
+const DB_FILE = process.env.NODE_ENV === 'production' 
+    ? '/data/chai_db.json' 
+    : path.join(__dirname, 'chai_db.json');
 
 const INITIAL_STATE = {
     payers: [
@@ -33,13 +37,18 @@ const INITIAL_STATE = {
 let state = { payers: [] };
 
 /**
- * Recalculates the ratio (amount / attendanceCount) for all payers.
- * This is the core logic for sorting.
+ * Recalculates the ratio using the new logic:
+ * (Amount / Attendance) * PaidCount
  */
 const recalculateAllRatios = () => {
     state.payers.forEach(p => {
-        // The ratio is the average amount paid per session attended
-        p.ratio = (p.attendanceCount > 0) ? (p.amount / p.attendanceCount) : 0;
+        // Avoid division by zero
+        if (p.attendanceCount > 0) {
+            // The requested formula:
+            p.ratio = (p.amount / p.attendanceCount) * p.count;
+        } else {
+            p.ratio = 0;
+        }
     });
 };
 
@@ -50,36 +59,38 @@ const writeDb = async () => {
 };
 
 const readDb = async () => {
-    try {
-        const data = await fs.readFile(DB_FILE, 'utf-8');
-        state = JSON.parse(data);
-        if (!state.payers) { throw new Error('Invalid DB file structure.'); }
+    try {
+        const data = await fs.readFile(DB_FILE, 'utf-8');
+        state = JSON.parse(data);
+        if (!state.payers) { throw new Error('Invalid DB file structure.'); }
 
-        // --- NEW: Migration/Hydration ---
-        // Checks if existing data has the new 'attendanceCount' field.
-        // If not, it adds it to prevent errors.
+        // --- Migration Check ---
         let needsResave = false;
         state.payers.forEach(p => {
             if (p.attendanceCount === undefined) {
-                // Best guess: assume past attendance was equal to times paid
                 p.attendanceCount = p.count || 0; 
                 needsResave = true;
             }
         });
 
+        // --- CRITICAL CHANGE HERE ---
+        // We calculate ratios immediately after loading. 
+        // This updates the logic in memory without altering the raw data (amount/count) in the file yet.
+        recalculateAllRatios(); 
+
         if (needsResave) {
             console.warn("Hydrating old DB file with 'attendanceCount' field...");
-            recalculateAllRatios(); // Recalculate ratio based on new attendance data
-            await writeDb(); // Save the hydrated state
+            await writeDb(); 
         }
-        // --- End Migration ---
-
-        console.log("Loaded state from chai_db.json");
-    } catch (error) {
-        console.warn("WARN: Could not read DB file. Using initial state.", error.message);
-        state = INITIAL_STATE;
-        await writeDb();
-    }
+        
+        console.log("Loaded state from chai_db.json with NEW ratio logic.");
+    } catch (error) {
+        console.warn("WARN: Could not read DB file. Using initial state.", error.message);
+        state = INITIAL_STATE;
+        // Apply logic to initial state too
+        recalculateAllRatios();
+        await writeDb();
+    }
 };
 
 const getSortedPayers = () => {
