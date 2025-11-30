@@ -240,3 +240,36 @@ button:disabled {
 .notify-button:hover:not(:disabled) {
   background-color: var(--secondary-hover);
 }
+
+.attendance-header {
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+  padding-bottom: 5px;
+  border-bottom: 1px solid #ccc;
+  margin-bottom: 5px;
+  font-size: 0.9rem;
+}
+
+.attendance-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+}
+
+.att-name {
+  flex: 2; /* Takes up more space */
+  text-align: left;
+}
+
+.attendance-item input {
+  flex: 1; /* Checkboxes take equal remaining space */
+  transform: scale(1.2); /* Make checkboxes slightly easier to tap */
+}
+
+/* Highlight the row if they are paying */
+.is-paying-row {
+  background-color: #fff3cd; /* Light yellow warning color */
+  border-radius: 4px;
+}

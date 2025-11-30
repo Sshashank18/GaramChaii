@@ -142,33 +142,54 @@ app.get('/api/turn', (req, res) => {
 
 // POST to *pay* (updates data, sends payment notification)
 app.post('/api/pay', async (req, res) => {
-    // --- UPDATED: Now expects 'amount' and 'attendees' array ---
-    const { amount, attendees } = req.body;
+    // UPDATED: Now accepts optional 'customPayers' array
+    const { amount, attendees, customPayers } = req.body;
 
-    // --- UPDATED: Validation ---
-    if (typeof amount !== 'number' || amount <= 0) {
-        return res.status(400).json({ error: 'Request body must include a valid "amount".' });
-    }
+    // --- Validation ---
+    if (typeof amount !== 'number' || amount <= 0) {
+        return res.status(400).json({ error: 'Request body must include a valid "amount".' });
+    }
     if (!Array.isArray(attendees) || attendees.length === 0) {
         return res.status(400).json({ error: 'Request body must include a non-empty "attendees" array.' });
     }
-    if (state.payers.length < 2) {
-        return res.status(400).json({ error: 'Not enough payers in the list.' });
-    }
+    if (state.payers.length < 2) {
+        return res.status(400).json({ error: 'Not enough payers in the list.' });
+    }
 
-    const sortedPayers = getSortedPayers();
-    const payer1 = sortedPayers[0];
-    const payer2 = sortedPayers[1];
-    const amountPerPayer = amount / 2;
+    let payer1, payer2;
 
-    // Update the two payers
-    payer1.count++;
-    payer1.amount += amountPerPayer;
-    
-    payer2.count++;
-    payer2.amount += amountPerPayer;
+    // --- LOGIC: Check if specific payers were forced (Manual Override) ---
+    if (Array.isArray(customPayers) && customPayers.length === 2) {
+        const name1 = customPayers[0];
+        const name2 = customPayers[1];
 
-    // --- NEW: Update attendance for everyone present ---
+        payer1 = state.payers.find(p => p.name === name1);
+        payer2 = state.payers.find(p => p.name === name2);
+
+        if (!payer1 || !payer2) {
+            return res.status(404).json({ error: `One or both custom payers ('${name1}', '${name2}') not found.` });
+        }
+        
+        if (payer1.name === payer2.name) {
+             return res.status(400).json({ error: 'Payer 1 and Payer 2 cannot be the same person.' });
+        }
+    } else {
+        // Default behavior: Pick the top 2 from the sorted list
+        const sortedPayers = getSortedPayers();
+        payer1 = sortedPayers[0];
+        payer2 = sortedPayers[1];
+    }
+
+    const amountPerPayer = amount / 2;
+
+    // Update the two payers
+    payer1.count++;
+    payer1.amount += amountPerPayer;
+    
+    payer2.count++;
+    payer2.amount += amountPerPayer;
+
+    // --- Update attendance for everyone present (HAPPENS ONCE) ---
     attendees.forEach(name => {
         const payer = state.payers.find(p => p.name === name);
         if (payer) {
@@ -178,69 +199,67 @@ app.post('/api/pay', async (req, res) => {
         }
     });
 
-    // --- NEW: Recalculate ratios for ALL payers ---
+    // --- Recalculate ratios for ALL payers ---
     recalculateAllRatios();
-  
-    await writeDb();
+  
+    await writeDb();
 
-    // Get the *new* sorted list to find the next payers
+    // Get the *new* sorted list for notification
     const nextSortedPayers = getSortedPayers();
-    const nextPayer1Name = nextSortedPayers[0] ? nextSortedPayers[0].name : "N/A";
-    const nextPayer2Name = nextSortedPayers[1] ? nextSortedPayers[1].name : "N/A";
+    const nextPayer1Name = nextSortedPayers[0] ? nextSortedPayers[0].name : "N/A";
+    const nextPayer2Name = nextSortedPayers[1] ? nextSortedPayers[1].name : "N/A";
 
-    sendPaymentNotification(payer1.name, payer2.name, amount, nextPayer1Name, nextPayer2Name);
-    res.json(getSortedPayers()); // Send the final sorted list back
+    sendPaymentNotification(payer1.name, payer2.name, amount, nextPayer1Name, nextPayer2Name);
+    res.json(getSortedPayers()); 
 });
 
 // POST to send a notification WITHOUT paying
 app.post('/api/notify', async (req, res) => {
-    const sortedPayers = getSortedPayers();
-    if (state.payers.length < 2) {
-        return res.status(400).json({ error: 'Not enough payers to notify.' });
-    }
-    
-    const nextPayer1Name = sortedPayers[0] ? sortedPayers[0].name : "N/A";
-    const nextPayer2Name = sortedPayers[1] ? sortedPayers[1].name : "N/A";
+    const sortedPayers = getSortedPayers();
+    if (state.payers.length < 2) {
+        return res.status(400).json({ error: 'Not enough payers to notify.' });
+    }
+    
+    const nextPayer1Name = sortedPayers[0] ? sortedPayers[0].name : "N/A";
+    const nextPayer2Name = sortedPayers[1] ? sortedPayers[1].name : "N/A";
 
-    await sendNextTurnNotification(nextPayer1Name, nextPayer2Name);
-    res.status(200).json({ message: 'Notification sent successfully.' });
+    await sendNextTurnNotification(nextPayer1Name, nextPayer2Name);
+    res.status(200).json({ message: 'Notification sent successfully.' });
 });
 
-// POST to *manually update* (updates data, no notification)
+// POST to *manually update* (Edit Button functionality)
 app.post('/api/update', async (req, res) => {
-    // --- UPDATED: Now accepts 'attendanceCount' ---
     const { name, amount, count, attendanceCount } = req.body;
 
-    // --- UPDATED: Validation ---
-    if (!name || 
+    if (!name || 
         typeof amount !== 'number' || 
         typeof count !== 'number' || 
-        typeof attendanceCount !== 'number' || // Check new field
-        amount < 0 || count < 0 || attendanceCount < 0 || // Check new field
-        !Number.isInteger(count) || !Number.isInteger(attendanceCount)) { // Check new field
-        return res.status(400).json({ error: 'Invalid payload. Must include name, amount, count, and attendanceCount.' });
-    }
-    const payer = state.payers.find(p => p.name === name);
-    if (!payer) {
-        return res.status(404).json({ error: `Payer not found.` });
-    }
+        typeof attendanceCount !== 'number' || 
+        amount < 0 || count < 0 || attendanceCount < 0 || 
+        !Number.isInteger(count) || !Number.isInteger(attendanceCount)) {
+        return res.status(400).json({ error: 'Invalid payload. Must include name, amount, count, and attendanceCount.' });
+    }
+    const payer = state.payers.find(p => p.name === name);
+    if (!payer) {
+        return res.status(404).json({ error: `Payer not found.` });
+    }
 
-    // --- UPDATED: Set all fields ---
-    payer.amount = amount;
-    payer.count = count;
+    payer.amount = amount;
+    payer.count = count;
     payer.attendanceCount = attendanceCount;
-    payer.ratio = (attendanceCount > 0) ? (amount / attendanceCount) : 0; // Use new ratio logic
+    // Recalculate just this one (or run global helper, which is safer)
+    recalculateAllRatios();
 
-    await writeDb();
-    res.json(getSortedPayers());
+    await writeDb();
+    res.json(getSortedPayers());
 });
 
 // Start the server
 const startServer = async () => {
-    await readDb(); // Reads DB and performs migration if needed
-    app.listen(PORT, HOST, () => {
-        console.log(`Chaii server running on http://${HOST}:${PORT}`);
-        console.table(getSortedPayers());
-    });
+    await readDb(); 
+    app.listen(PORT, HOST, () => {
+        console.log(`Chaii server running on http://${HOST}:${PORT}`);
+        console.table(getSortedPayers());
+    });
 };
 startServer();
