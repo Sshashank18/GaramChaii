@@ -1,0 +1,88 @@
+{
+  "payers": [
+    {
+      "name": "Shashank",
+      "count": 1,
+      "amount": 130,
+      "attendanceCount": 8,
+      "ratio": 16.25
+    },
+    {
+      "name": "Tapish",
+      "count": 1,
+      "amount": 130,
+      "attendanceCount": 8,
+      "ratio": 16.25
+    },
+    {
+      "name": "Ashwin",
+      "count": 1,
+      "amount": 115,
+      "attendanceCount": 7,
+      "ratio": 16.428571428571427
+    },
+    {
+      "name": "Naman",
+      "count": 1,
+      "amount": 130,
+      "attendanceCount": 7,
+      "ratio": 18.571428571428573
+    },
+    {
+      "name": "Devansh",
+      "count": 2,
+      "amount": 175,
+      "attendanceCount": 9,
+      "ratio": 19.444444444444443
+    },
+    {
+      "name": "Abhilash",
+      "count": 1,
+      "amount": 80,
+      "attendanceCount": 4,
+      "ratio": 20
+    },
+    {
+      "name": "Pradeep",
+      "count": 1,
+      "amount": 130,
+      "attendanceCount": 6,
+      "ratio": 21.666666666666668
+    },
+    {
+      "name": "Rohan Dayal",
+      "count": 2,
+      "amount": 200,
+      "attendanceCount": 7,
+      "ratio": 28.571428571428573
+    },
+    {
+      "name": "Rohit",
+      "count": 3,
+      "amount": 260,
+      "attendanceCount": 9,
+      "ratio": 28.88888888888889
+    },
+    {
+      "name": "Vasu",
+      "count": 1,
+      "amount": 130,
+      "attendanceCount": 4,
+      "ratio": 32.5
+    },
+    {
+      "name": "Sarthak",
+      "count": 2,
+      "amount": 240,
+      "attendanceCount": 8,
+      "ratio": 30
+    },
+    {
+      "name": "saruav",
+      "count": 2,
+      "amount": 220,
+      "attendanceCount": 6,
+      "ratio": 73.33333333333333
+    }
+  ]
+}
