@@ -206,3 +206,67 @@ body {
 .add-payer-row { display: flex; gap: 10px; }
 .add-payer-row input { flex: 1; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; }
 .add-btn { background: #334155; color: white; border: none; padding: 0 20px; border-radius: 8px; cursor: pointer; }
+
+/* Add these to your existing CSS file */
+
+.editing-item {
+  border: 2px solid var(--primary);
+  background: #fdfdfd;
+}
+
+.edit-grid {
+  display: flex;
+  flex: 1;
+  gap: 15px;
+  align-items: flex-end;
+  animation: slideFadeIn 0.2s ease-out;
+}
+
+@media (max-width: 600px) {
+  .edit-grid { flex-direction: column; align-items: stretch; }
+}
+
+.edit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.edit-field label {
+  font-size: 0.75rem;
+  font-weight: bold;
+  color: var(--text-muted);
+}
+
+.edit-field input {
+  padding: 6px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.edit-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.save-btn {
+  background: var(--success);
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.cancel-btn {
+  background: #e2e8f0;
+  color: var(--text-main);
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.cancel-btn:hover { background: #cbd5e0; }

@@ -36,6 +36,34 @@ function App() {
     setSelectedPayers(initialPay);
   };
 
+  // --- EDIT LOGIC ---
+  const handleEditClick = (p) => {
+    setEditingName(p.name);
+    setEditForm({ 
+      amount: p.amount, 
+      count: p.count, 
+      attendanceCount: p.attendanceCount 
+    });
+  };
+
+  const handleSaveEdit = async (name) => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/api/update`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, ...editForm })
+      });
+      const data = await res.json();
+      setPayers(data);
+      setEditingName(null);
+    } catch (err) {
+      alert("Failed to update");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleAddPayer = async () => {
     if (!newPayerName.trim()) return;
     setLoading(true);
@@ -93,7 +121,7 @@ function App() {
     <div className="container">
       <header className="main-header">
         <h1>☕ Chaii Ledger</h1>
-        <p>Manage attendance and track who's buying the next round.</p>
+        <p>Track attendance and automate the tea rotation.</p>
       </header>
 
       {/* --- SESSION CARD --- */}
@@ -117,7 +145,7 @@ function App() {
             <button onClick={handlePayment} className="pay-button" disabled={loading || !paymentAmount}>
               {loading ? "Processing..." : "Confirm & Update Stats"}
             </button>
-            <p className="helper-text">This will split ₹{(Number(paymentAmount)/2).toFixed(2)} between the 2 selected payers.</p>
+            <p className="helper-text">Splits ₹{(Number(paymentAmount)/2).toFixed(2)} to 2 selected payers.</p>
           </div>
 
           <div className="selection-section">
@@ -168,20 +196,48 @@ function App() {
 
       {/* --- STATS LIST --- */}
       <div className="stats-container">
-        <h3><span className="icon">📊</span> Payer Rankings (Lower Ratio Pays)</h3>
+        <h3><span className="icon">📊</span> Payer Rankings</h3>
         <div className="stats-list">
-          {payers.map((p, i) => (
-            <div key={p.name} className={`stats-item ${i < 2 ? 'next-up' : ''}`}>
-              <div className="rank">#{i + 1}</div>
-              <div className="p-details">
-                <span className="p-name">{p.name} {i < 2 && <span className="badge">Next Turn</span>}</span>
-                <span className="p-sub">Ratio: <strong>{p.ratio.toFixed(2)}</strong> | Paid: {p.count}x | Total: ₹{p.amount}</span>
+          {payers.map((p, i) => {
+            const isEditing = editingName === p.name;
+            return (
+              <div key={p.name} className={`stats-item ${i < 2 ? 'next-up' : ''} ${isEditing ? 'editing-item' : ''}`}>
+                <div className="rank">#{i + 1}</div>
+                
+                {isEditing ? (
+                  <div className="edit-grid">
+                    <div className="edit-field">
+                      <label>Total ₹</label>
+                      <input type="number" value={editForm.amount} onChange={e => setEditForm({...editForm, amount: Number(e.target.value)})} />
+                    </div>
+                    <div className="edit-field">
+                      <label>Paid (x)</label>
+                      <input type="number" value={editForm.count} onChange={e => setEditForm({...editForm, count: Number(e.target.value)})} />
+                    </div>
+                    <div className="edit-field">
+                      <label>Attended (x)</label>
+                      <input type="number" value={editForm.attendanceCount} onChange={e => setEditForm({...editForm, attendanceCount: Number(e.target.value)})} />
+                    </div>
+                    <div className="edit-actions">
+                      <button className="save-btn" onClick={() => handleSaveEdit(p.name)}>Save</button>
+                      <button className="cancel-btn" onClick={() => setEditingName(null)}>Cancel</button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="p-details">
+                      <span className="p-name">{p.name} {i < 2 && <span className="badge">Next Turn</span>}</span>
+                      <span className="p-sub">Ratio: <strong>{p.ratio.toFixed(2)}</strong> | Paid: {p.count}x | Total: ₹{p.amount} | Attended: {p.attendanceCount}x</span>
+                    </div>
+                    <div className="actions">
+                      <button className="btn-icon" onClick={() => handleEditClick(p)}>✏️</button>
+                      <button className="btn-icon delete" onClick={() => handleRemovePayer(p.name)}>🗑️</button>
+                    </div>
+                  </>
+                )}
               </div>
-              <div className="actions">
-                <button className="btn-icon delete" onClick={() => handleRemovePayer(p.name)}>🗑️</button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
