@@ -213,6 +213,54 @@ app.post('/api/pay', async (req, res) => {
     res.json(getSortedPayers()); 
 });
 
+// POST to add a new player
+app.post('/api/payers/add', async (req, res) => {
+    const { name } = req.body;
+
+    if (!name || typeof name !== 'string' || name.trim() === '') {
+        return res.status(400).json({ error: 'A valid name is required.' });
+    }
+
+    const existingPayer = state.payers.find(p => p.name.toLowerCase() === name.trim().toLowerCase());
+    if (existingPayer) {
+        return res.status(400).json({ error: 'Player already exists.' });
+    }
+
+    const newPayer = {
+        name: name.trim(),
+        count: 0,
+        amount: 0,
+        attendanceCount: 0,
+        ratio: 0
+    };
+
+    state.payers.push(newPayer);
+    await writeDb();
+    
+    console.log(`Added new player: ${name}`);
+    res.status(201).json(getSortedPayers());
+});
+
+// DELETE or POST to remove a player
+app.post('/api/payers/remove', async (req, res) => {
+    const { name } = req.body;
+
+    if (!name) {
+        return res.status(400).json({ error: 'Name is required to remove a player.' });
+    }
+
+    const initialLength = state.payers.length;
+    state.payers = state.payers.filter(p => p.name !== name);
+
+    if (state.payers.length === initialLength) {
+        return res.status(404).json({ error: 'Player not found.' });
+    }
+
+    await writeDb();
+    console.log(`Removed player: ${name}`);
+    res.json(getSortedPayers());
+});
+
 // POST to send a notification WITHOUT paying
 app.post('/api/notify', async (req, res) => {
     const sortedPayers = getSortedPayers();

@@ -1,28 +1,14 @@
-/* --- App.css (Updated) --- */
-/*
-  NOTE: All :root, body, and @import styles have been
-  moved to index.css for a cleaner project.
-*/
+/* --- App.css (Updated with Management & Delete Styles) --- */
 
 /* --- 1. Animations --- */
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes slideFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* --- 2. Layout & Containers --- */
@@ -39,7 +25,7 @@ header {
   color: var(--text-dark);
 }
 
-/* --- 3. Cards (Payment & List) --- */
+/* --- 3. Cards (Payment, Management & List) --- */
 .card,
 .upcoming-list {
   background-color: var(--card-bg);
@@ -52,13 +38,14 @@ header {
 
 .upcoming-list {
   padding: 0;
-  overflow: hidden; /* To keep rounded corners on list items */
+  overflow: hidden;
 }
 
 .card h2,
 .upcoming-list h3 {
   margin-top: 0;
   color: var(--text-dark);
+  font-size: 1.25rem;
 }
 
 .upcoming-list h3 {
@@ -72,7 +59,27 @@ header {
   box-shadow: 0 8px 15px rgba(0, 0, 0, 0.07);
 }
 
-/* --- 4. Form Inputs & Buttons --- */
+/* --- 4. Player Management Styles (NEW) --- */
+.management-card {
+  background-color: #f0f4f8; /* Soft blue tint to distinguish from payment */
+  border: 1px dashed #cbd5e0;
+}
+
+.add-payer-row {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.add-payer-row input {
+  flex: 1;
+  padding: 10px;
+  border-radius: var(--border-radius-md);
+  border: 1px solid #ddd;
+  font-family: inherit;
+}
+
+/* --- 5. Form Inputs & Buttons --- */
 .amount-input {
   width: 100%;
   padding: 12px;
@@ -81,10 +88,11 @@ header {
   border-radius: var(--border-radius-md);
   border: 1px solid #ddd;
   transition: all var(--transition-speed);
-  font-family: inherit; /* Inherit "Poppins" */
+  font-family: inherit;
 }
 
 .amount-input:focus,
+.add-payer-row input:focus,
 .edit-inputs input:focus {
   border-color: var(--primary-color);
   box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
@@ -101,17 +109,12 @@ button {
   background-color: var(--primary-color);
   color: var(--text-white);
   transition: all var(--transition-speed);
-  font-family: inherit; /* Inherit "Poppins" */
+  font-family: inherit;
 }
 
 button:hover:not(:disabled) {
   background-color: var(--primary-hover);
   transform: scale(1.03);
-  box-shadow: var(--shadow-md);
-}
-
-button:active:not(:disabled) {
-  transform: scale(0.98);
 }
 
 button:disabled {
@@ -119,7 +122,17 @@ button:disabled {
   cursor: not-allowed;
 }
 
-/* --- 5. Payer List & Items --- */
+/* Delete Button Specifics */
+.delete-button {
+  background-color: #e74c3c !important;
+  margin-left: 0.5rem;
+}
+
+.delete-button:hover:not(:disabled) {
+  background-color: #c0392b !important;
+}
+
+/* --- 6. Payer List & Items --- */
 .upcoming-list ol {
   list-style: none;
   padding: 0;
@@ -132,26 +145,23 @@ button:disabled {
   align-items: center;
   padding: 1.25rem 1.5rem;
   border-bottom: 1px solid var(--border-color);
-  border-left: 4px solid transparent; /* Placeholder for highlight */
+  border-left: 4px solid transparent;
   transition: all var(--transition-speed);
 }
 
-.upcoming-list li:last-child {
-  border-bottom: none;
+.list-actions {
+  display: flex;
+  align-items: center;
 }
 
-.upcoming-list li:hover {
-  background-color: #f8f9fa; /* Use --bg-color for consistency */
-}
-
-.upcoming-list li .payer-info {
+.payer-info {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
 }
 
-.upcoming-list li .stats {
-  font-size: 0.9rem;
+.stats {
+  font-size: 0.85rem;
   color: var(--text-light);
 }
 
@@ -161,115 +171,57 @@ button:disabled {
   border-left-color: var(--warning-border);
 }
 
-.is-next-to-pay .payer-info {
-  font-weight: 600;
+/* --- 7. Attendance & Selection Grid --- */
+.attendance-header {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  text-align: center;
+  font-weight: bold;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #eee;
+  margin-bottom: 10px;
 }
 
-.editing-row {
-  background-color: #fcfcfc;
-  border-left-color: var(--edit-border);
+.attendance-header span:first-child {
+  text-align: left;
 }
 
-/* --- 6. Inline Edit Form --- */
-.edit-form {
-  width: 100%;
-  padding: 10px 0;
-  animation: slideFadeIn 0.3s ease-out;
+.attendance-item {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  align-items: center;
+  padding: 8px 0;
+  text-align: center;
 }
 
-.edit-form strong {
-  font-size: 1.1rem;
-  margin-bottom: 1rem;
-  display: block;
-  color: var(--text-dark);
-}
-
-.edit-inputs {
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.edit-inputs label {
-  display: flex;
-  flex-direction: column;
-  font-size: 0.85rem;
-  color: var(--text-light);
-  width: 50%;
-}
-
-.edit-inputs input {
-  font-size: 1rem;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: var(--border-radius-sm);
-  margin-top: 4px;
-  font-family: inherit; /* Inherit "Poppins" */
-}
-
-.edit-buttons {
-  display: flex;
-  gap: 0.5rem;
-}
-
-/* Specific button styles for list */
-.upcoming-list li button {
-  padding: 0.5rem 1rem;
-  font-size: 0.9rem;
+.att-name {
+  text-align: left;
   font-weight: 500;
-  background-color: var(--secondary-color);
 }
 
-.upcoming-list li button:hover:not(:disabled) {
-  background-color: var(--secondary-hover);
+.attendance-item input[type="checkbox"] {
+  justify-self: center;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
 }
 
-.edit-buttons button[type='submit'] {
+.is-paying-row {
+  background-color: rgba(255, 193, 7, 0.15);
+  padding-left: 8px;
+  padding-right: 8px;
+  margin-left: -8px;
+  margin-right: -8px;
+}
+
+/* --- 8. Notification & Payment Buttons --- */
+.pay-button {
+  width: 100%;
   background-color: var(--success-color);
-}
-
-.edit-buttons button[type='submit']:hover:not(:disabled) {
-  background-color: var(--success-hover);
+  margin-bottom: 0.5rem;
 }
 
 .notify-button {
   background-color: var(--secondary-color);
-  margin-top: 0.75rem; /* Add some space above it */
-  width: 100%; /* Make it full-width like the one above */
-}
-
-.notify-button:hover:not(:disabled) {
-  background-color: var(--secondary-hover);
-}
-
-.attendance-header {
-  display: flex;
-  justify-content: space-between;
-  font-weight: bold;
-  padding-bottom: 5px;
-  border-bottom: 1px solid #ccc;
-  margin-bottom: 5px;
-  font-size: 0.9rem;
-}
-
-.attendance-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 5px 0;
-}
-
-.att-name {
-  flex: 2; /* Takes up more space */
-  text-align: left;
-}
-
-.attendance-item input {
-  flex: 1; /* Checkboxes take equal remaining space */
-  transform: scale(1.2); /* Make checkboxes slightly easier to tap */
-}
-
-/* Highlight the row if they are paying */
-.is-paying-row {
-  background-color: #fff3cd; /* Light yellow warning color */
-  border-radius: 4px;
+  width: 100%;
 }
