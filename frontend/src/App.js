@@ -9,12 +9,11 @@ function App() {
   const [paymentAmount, setPaymentAmount] = useState('');
   const [attendance, setAttendance] = useState({});
   const [selectedPayers, setSelectedPayers] = useState({});
-  const [isNotifying, setIsNotifying] = useState(false);
   const [newPayerName, setNewPayerName] = useState('');
 
   // Editing state
   const [editingName, setEditingName] = useState(null);
-  const [editForm, setEditForm] = useState({ amount: '', count: '', attendanceCount: '' });
+  const [editForm, setEditForm] = useState({ amount: 0, count: 0, attendanceCount: 0 });
 
   useEffect(() => {
     fetch(`${API_URL}/api/turn`)
@@ -71,82 +70,121 @@ function App() {
     const attendees = Object.keys(attendance).filter(n => attendance[n]);
     const customPayers = Object.keys(selectedPayers).filter(n => selectedPayers[n]);
 
+    if (!paymentAmount || Number(paymentAmount) <= 0) return alert("Enter a valid amount");
     if (customPayers.length !== 2) return alert("Select exactly 2 payers");
 
     setLoading(true);
-    const res = await fetch(`${API_URL}/api/pay`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ amount: Number(paymentAmount), attendees, customPayers })
-    });
-    const data = await res.json();
-    setPayers(data);
-    setPaymentAmount('');
-    initializeSelections(data);
-    setLoading(false);
+    try {
+      const res = await fetch(`${API_URL}/api/pay`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: Number(paymentAmount), attendees, customPayers })
+      });
+      const data = await res.json();
+      setPayers(data);
+      setPaymentAmount('');
+      initializeSelections(data);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="container">
-      <h1>☕ Chaii Payment Ledger</h1>
+      <header className="main-header">
+        <h1>☕ Chaii Ledger</h1>
+        <p>Manage attendance and track who's buying the next round.</p>
+      </header>
 
-      <div className="card">
-        <h2>Confirm Session</h2>
-        <div className="payment-card-content">
-          <div className="payment-controls">
-            <input type="number" placeholder="Amount" value={paymentAmount} onChange={e => setPaymentAmount(e.target.value)} />
-            <button onClick={handlePayment} className="pay-button" disabled={loading}>Confirm Payment</button>
+      {/* --- SESSION CARD --- */}
+      <div className="card session-card">
+        <div className="card-header">
+          <h2><span className="icon">📝</span> Confirm Today's Session</h2>
+        </div>
+        
+        <div className="payment-grid">
+          <div className="input-section">
+            <label>Total Bill Amount</label>
+            <div className="amount-input-wrapper">
+              <span className="currency-label">₹</span>
+              <input 
+                type="number" 
+                placeholder="0.00" 
+                value={paymentAmount} 
+                onChange={e => setPaymentAmount(e.target.value)} 
+              />
+            </div>
+            <button onClick={handlePayment} className="pay-button" disabled={loading || !paymentAmount}>
+              {loading ? "Processing..." : "Confirm & Update Stats"}
+            </button>
+            <p className="helper-text">This will split ₹{(Number(paymentAmount)/2).toFixed(2)} between the 2 selected payers.</p>
           </div>
-          <div className="attendance-list">
-            {payers.map(p => (
-              <div key={p.name} className="attendance-item">
-                <span>{p.name}</span>
-                <input type="checkbox" checked={attendance[p.name]} onChange={() => setAttendance({...attendance, [p.name]: !attendance[p.name]})} />
-                <input type="checkbox" checked={selectedPayers[p.name]} onChange={() => setSelectedPayers({...selectedPayers, [p.name]: !selectedPayers[p.name]})} />
-              </div>
-            ))}
+
+          <div className="selection-section">
+            <div className="table-header">
+              <span className="col-name">Name</span>
+              <span className="col-check">Present</span>
+              <span className="col-check">Paying</span>
+            </div>
+            <div className="table-body">
+              {payers.map(p => (
+                <div key={p.name} className={`table-row ${selectedPayers[p.name] ? 'active-payer' : ''}`}>
+                  <span className="name-cell">{p.name}</span>
+                  <label className="checkbox-container">
+                    <input 
+                      type="checkbox" 
+                      checked={attendance[p.name] || false} 
+                      onChange={() => setAttendance({...attendance, [p.name]: !attendance[p.name]})} 
+                    />
+                    <span className="checkmark"></span>
+                  </label>
+                  <label className="checkbox-container">
+                    <input 
+                      type="checkbox" 
+                      checked={selectedPayers[p.name] || false} 
+                      onChange={() => setSelectedPayers({...selectedPayers, [p.name]: !selectedPayers[p.name]})} 
+                    />
+                    <span className="checkmark payer-check"></span>
+                  </label>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="card management-card">
-        <h2>Manage Team</h2>
+      {/* --- MANAGEMENT CARD --- */}
+      <div className="card manage-card">
+        <h2><span className="icon">👥</span> Team Management</h2>
         <div className="add-payer-row">
-          <input value={newPayerName} onChange={e => setNewPayerName(e.target.value)} placeholder="Name" />
-          <button onClick={handleAddPayer}>Add Player +</button>
+          <input 
+            value={newPayerName} 
+            onChange={e => setNewPayerName(e.target.value)} 
+            placeholder="Add new teammate name..." 
+          />
+          <button onClick={handleAddPayer} className="add-btn">Add +</button>
         </div>
       </div>
 
-      <div className="upcoming-list">
-        <h3>Payer Stats</h3>
-        <ol>
+      {/* --- STATS LIST --- */}
+      <div className="stats-container">
+        <h3><span className="icon">📊</span> Payer Rankings (Lower Ratio Pays)</h3>
+        <div className="stats-list">
           {payers.map((p, i) => (
-            <PayerListItem 
-              key={p.name} payer={p} index={i} 
-              onRemoveClick={handleRemovePayer}
-              onEditClick={(payer) => { setEditingName(payer.name); setEditForm(payer); }}
-              isEditing={editingName === p.name}
-              // ... other existing edit props
-            />
+            <div key={p.name} className={`stats-item ${i < 2 ? 'next-up' : ''}`}>
+              <div className="rank">#{i + 1}</div>
+              <div className="p-details">
+                <span className="p-name">{p.name} {i < 2 && <span className="badge">Next Turn</span>}</span>
+                <span className="p-sub">Ratio: <strong>{p.ratio.toFixed(2)}</strong> | Paid: {p.count}x | Total: ₹{p.amount}</span>
+              </div>
+              <div className="actions">
+                <button className="btn-icon delete" onClick={() => handleRemovePayer(p.name)}>🗑️</button>
+              </div>
+            </div>
           ))}
-        </ol>
+        </div>
       </div>
     </div>
-  );
-}
-
-function PayerListItem({ payer, index, onRemoveClick, onEditClick, isEditing }) {
-  return (
-    <li className={index < 2 ? 'is-next-to-pay' : ''}>
-      <div className="payer-info">
-        <strong>{index + 1}. {payer.name}</strong>
-        <span className="stats">(Ratio: {payer.ratio.toFixed(2)})</span>
-      </div>
-      <div className="list-actions">
-        <button onClick={() => onEditClick(payer)}>Edit</button>
-        <button onClick={() => onRemoveClick(payer.name)} className="delete-button">Remove</button>
-      </div>
-    </li>
   );
 }
 
