@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 
 // Your Node.js server address
-const API_URL = 'http://13.203.214.25:3000/'; 
+const API_URL = 'http://13.203.214.25:3000'; 
 
 // --- Component 1: The Main App ---
 
