@@ -277,27 +277,35 @@ app.post('/api/notify', async (req, res) => {
 
 // POST to *manually update* (Edit Button functionality)
 app.post('/api/update', async (req, res) => {
-    const { name, amount, count, attendanceCount } = req.body;
+    // attendees is the list of names currently checked in the UI
+    const { name, amount, count, attendanceCount, updateOthers, attendees } = req.body;
 
-    if (!name || 
-        typeof amount !== 'number' || 
-        typeof count !== 'number' || 
-        typeof attendanceCount !== 'number' || 
-        amount < 0 || count < 0 || attendanceCount < 0 || 
-        !Number.isInteger(count) || !Number.isInteger(attendanceCount)) {
-        return res.status(400).json({ error: 'Invalid payload. Must include name, amount, count, and attendanceCount.' });
+    // Standard Validation
+    if (!name || typeof amount !== 'number' || typeof count !== 'number') {
+        return res.status(400).json({ error: 'Invalid payload.' });
     }
+
     const payer = state.payers.find(p => p.name === name);
-    if (!payer) {
-        return res.status(404).json({ error: `Payer not found.` });
-    }
+    if (!payer) return res.status(404).json({ error: `Payer not found.` });
 
+    // 1. Update the specific individual being edited
     payer.amount = amount;
     payer.count = count;
     payer.attendanceCount = attendanceCount;
-    // Recalculate just this one (or run global helper, which is safer)
-    recalculateAllRatios();
 
+    // 2. NEW LOGIC: If triggered, update everyone marked as "Present"
+    // This increments their count by 1 (manual session adjustment)
+    if (updateOthers && Array.isArray(attendees)) {
+        attendees.forEach(attName => {
+            const p = state.payers.find(x => x.name === attName);
+            // We only increment others; the edited person was already updated above
+            if (p && p.name !== name) {
+                p.attendanceCount += 1;
+            }
+        });
+    }
+
+    recalculateAllRatios();
     await writeDb();
     res.json(getSortedPayers());
 });

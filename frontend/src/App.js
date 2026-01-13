@@ -47,22 +47,34 @@ function App() {
   };
 
   const handleSaveEdit = async (name) => {
+    // Get list of names currently checked in the attendance column
+    const currentAttendees = Object.keys(attendance).filter(n => attendance[n]);
+
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/update`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, ...editForm })
-      });
-      const data = await res.json();
-      setPayers(data);
-      setEditingName(null);
+        const res = await fetch(`${API_URL}/api/update`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                name, 
+                ...editForm,
+                attendees: currentAttendees,
+                updateOthers: true // This tells the server to +1 to everyone checked
+            })
+        });
+        
+        if (!res.ok) throw new Error("Update failed");
+        
+        const data = await res.json();
+        setPayers(data);
+        setEditingName(null);
+        alert("Payer updated and attendance incremented for selected team members!");
     } catch (err) {
-      alert("Failed to update");
+        alert(err.message);
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
-  };
+};
 
   const handleAddPayer = async () => {
     if (!newPayerName.trim()) return;
