@@ -47,7 +47,6 @@ function App() {
   };
 
   const handleSaveEdit = async (name) => {
-    // Get list of names currently checked in the attendance column
     const currentAttendees = Object.keys(attendance).filter(n => attendance[n]);
 
     setLoading(true);
@@ -59,7 +58,7 @@ function App() {
                 name, 
                 ...editForm,
                 attendees: currentAttendees,
-                updateOthers: true // This tells the server to +1 to everyone checked
+                updateOthers: true 
             })
         });
         
@@ -220,15 +219,30 @@ function App() {
                   <div className="edit-grid">
                     <div className="edit-field">
                       <label>Total ₹</label>
-                      <input type="number" value={editForm.amount} onChange={e => setEditForm({...editForm, amount: Number(e.target.value)})} />
+                      <input 
+                        type="number" 
+                        value={editForm.amount === 0 ? '' : editForm.amount} 
+                        onChange={e => setEditForm({...editForm, amount: e.target.value === '' ? 0 : Number(e.target.value)})} 
+                        placeholder="0"
+                      />
                     </div>
                     <div className="edit-field">
                       <label>Paid (x)</label>
-                      <input type="number" value={editForm.count} onChange={e => setEditForm({...editForm, count: Number(e.target.value)})} />
+                      <input 
+                        type="number" 
+                        value={editForm.count === 0 ? '' : editForm.count} 
+                        onChange={e => setEditForm({...editForm, count: e.target.value === '' ? 0 : Number(e.target.value)})} 
+                        placeholder="0"
+                      />
                     </div>
                     <div className="edit-field">
                       <label>Attended (x)</label>
-                      <input type="number" value={editForm.attendanceCount} onChange={e => setEditForm({...editForm, attendanceCount: Number(e.target.value)})} />
+                      <input 
+                        type="number" 
+                        value={editForm.attendanceCount === 0 ? '' : editForm.attendanceCount} 
+                        onChange={e => setEditForm({...editForm, attendanceCount: e.target.value === '' ? 0 : Number(e.target.value)})} 
+                        placeholder="0"
+                      />
                     </div>
                     <div className="edit-actions">
                       <button className="save-btn" onClick={() => handleSaveEdit(p.name)}>Save</button>

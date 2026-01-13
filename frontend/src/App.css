@@ -210,63 +210,85 @@ body {
 /* Add these to your existing CSS file */
 
 .editing-item {
-  border: 2px solid var(--primary);
-  background: #fdfdfd;
+  background-color: #f0f7ff !important;
+  border: 1px solid #007bff;
 }
 
 .edit-grid {
   display: flex;
-  flex: 1;
+  flex-wrap: wrap;
   gap: 15px;
   align-items: flex-end;
-  animation: slideFadeIn 0.2s ease-out;
-}
-
-@media (max-width: 600px) {
-  .edit-grid { flex-direction: column; align-items: stretch; }
+  width: 100%;
+  padding: 5px 0;
 }
 
 .edit-field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
   flex: 1;
+  min-width: 80px;
 }
 
 .edit-field label {
   font-size: 0.75rem;
   font-weight: bold;
-  color: var(--text-muted);
+  color: #666;
+  text-transform: uppercase;
 }
 
 .edit-field input {
-  padding: 6px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 0.9rem;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.edit-field input:focus {
+  border-color: #007bff;
 }
 
 .edit-actions {
   display: flex;
   gap: 8px;
+  align-self: flex-end;
+}
+
+.save-btn, .cancel-btn {
+  padding: 8px 15px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: opacity 0.2s;
 }
 
 .save-btn {
-  background: var(--success);
+  background-color: #28a745;
   color: white;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 6px;
-  cursor: pointer;
 }
 
 .cancel-btn {
-  background: #e2e8f0;
-  color: var(--text-main);
-  border: none;
-  padding: 8px 12px;
-  border-radius: 6px;
-  cursor: pointer;
+  background-color: #6c757d;
+  color: white;
 }
 
-.cancel-btn:hover { background: #cbd5e0; }
+.save-btn:hover, .cancel-btn:hover {
+  opacity: 0.9;
+}
+
+/* Hide spin buttons for Chrome, Safari, Edge, Opera */
+.edit-field input::-webkit-outer-spin-button,
+.edit-field input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Hide spin buttons for Firefox */
+.edit-field input[type=number] {
+  -moz-appearance: textfield;
+}
