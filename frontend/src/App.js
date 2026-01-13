@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 
-const API_URL = 'https://b2fd0c23ca0e.ngrok-free.app'; 
+const API_URL = 'https://29a2c4aefbea.ngrok-free.app'; 
 
 function App() {
   const [payers, setPayers] = useState([]);
